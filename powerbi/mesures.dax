@@ -2,13 +2,16 @@
 // Dans Power BI Desktop : Accueil > Nouvelle mesure, puis coller UNE mesure à la fois.
 // Prérequis : dim_date marquée comme table de dates (colonne `date`), relations date_key 1-* vers
 // chaque table de faits, et dim_wilaya[wilaya_code] 1-* fact_commandes_dz[wilaya_code].
+//
+// Les filtres internes passent par KEEPFILTERS : ils s'ajoutent aux segments du rapport au lieu de les
+// remplacer. Sans lui, un segment « echange_probable = Oui » donnait un taux d'échec réel supérieur à 100 %.
 
 // ── Algérie (Bizz, données réelles anonymisées) ─────────────────────────────────
 Commandes DZ = COUNTROWS ( fact_commandes_dz )
 
-Livrées DZ = CALCULATE ( [Commandes DZ], fact_commandes_dz[resultat] = "Livrée" )
+Livrées DZ = CALCULATE ( [Commandes DZ], KEEPFILTERS ( fact_commandes_dz[resultat] = "Livrée" ) )
 
-Échouées DZ = CALCULATE ( [Commandes DZ], fact_commandes_dz[resultat] = "Échouée" )
+Échouées DZ = CALCULATE ( [Commandes DZ], KEEPFILTERS ( fact_commandes_dz[resultat] = "Échouée" ) )
 
 // Échecs parmi les commandes terminées (les commandes en cours ne comptent pas).
 Taux d'échec DZ = DIVIDE ( [Échouées DZ], [Livrées DZ] + [Échouées DZ] )
@@ -16,15 +19,17 @@ Taux d'échec DZ = DIVIDE ( [Échouées DZ], [Livrées DZ] + [Échouées DZ] )
 // Un retour suivi d'une nouvelle commande de la même cliente sous 14 jours est probablement un échange,
 // pas une vente perdue (colonne echange_probable, calculée après coup).
 Échecs réels DZ =
-CALCULATE ( [Échouées DZ], fact_commandes_dz[echange_probable] = "Non" )
+CALCULATE ( [Échouées DZ], KEEPFILTERS ( fact_commandes_dz[echange_probable] = "Non" ) )
+
+Échanges probables DZ = [Échouées DZ] - [Échecs réels DZ]
 
 Taux d'échec réel DZ = DIVIDE ( [Échecs réels DZ], [Livrées DZ] + [Échouées DZ] )
 
 CA livré DZ =
-CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), fact_commandes_dz[resultat] = "Livrée" )
+CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), KEEPFILTERS ( fact_commandes_dz[resultat] = "Livrée" ) )
 
 Ventes perdues DZ =
-CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), fact_commandes_dz[resultat] = "Échouée" )
+CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), KEEPFILTERS ( fact_commandes_dz[resultat] = "Échouée" ) )
 
 Panier moyen DZ = DIVIDE ( [CA livré DZ], [Livrées DZ] )
 
@@ -39,38 +44,83 @@ SUMX (
 Couverture du coût DZ =
 DIVIDE (
     CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ),
-        fact_commandes_dz[resultat] = "Livrée", NOT ISBLANK ( fact_commandes_dz[cout_connu_da] ) ),
+        KEEPFILTERS ( fact_commandes_dz[resultat] = "Livrée" ),
+        KEEPFILTERS ( NOT ISBLANK ( fact_commandes_dz[cout_connu_da] ) ) ),
     [CA livré DZ]
 )
 
 Part des commandes liées à un live =
 DIVIDE (
-    CALCULATE ( [Commandes DZ], fact_commandes_dz[depuis_live] = "Oui" ),
-    CALCULATE ( [Commandes DZ], fact_commandes_dz[source] = "Saisie Bizz" )
+    CALCULATE ( [Commandes DZ],
+        KEEPFILTERS ( fact_commandes_dz[depuis_live] = "Oui" ),
+        KEEPFILTERS ( fact_commandes_dz[source] = "Saisie Bizz" ) ),
+    CALCULATE ( [Commandes DZ], KEEPFILTERS ( fact_commandes_dz[source] = "Saisie Bizz" ) )
 )
 
 // Intelligence temporelle : nécessite dim_date marquée comme table de dates.
 Taux d'échec DZ (mois précédent) = CALCULATE ( [Taux d'échec DZ], DATEADD ( dim_date[date], -1, MONTH ) )
 
-Évolution du taux d'échec (points) = ( [Taux d'échec DZ] - [Taux d'échec DZ (mois précédent)] ) * 100
+// Vide pour le premier mois : sans mois précédent, tout le taux passerait pour une hausse.
+Évolution du taux d'échec (points) =
+VAR precedent = [Taux d'échec DZ (mois précédent)]
+RETURN IF ( NOT ISBLANK ( precedent ), ( [Taux d'échec DZ] - precedent ) * 100 )
+
+// ── Algérie : textes et indicateur dynamiques ───────────────────────────────────
+// Table « Indicateur wilaya » : Modélisation > Nouveau paramètre > Champs, avec Taux d'échec DZ,
+// Commandes DZ, CA livré DZ et Ventes perdues DZ (dans cet ordre). Son segment pilote les mesures
+// ci-dessous ; on passe par l'ordre (0 à 3) plutôt que par le libellé.
+
+// Sous-titre de l'en-tête : période réellement couverte par les commandes filtrées.
+Sous-titre DZ =
+VAR jours = FILTER ( VALUES ( dim_date[date] ), NOT ISBLANK ( [Commandes DZ] ) )
+VAR debut = MINX ( jours, dim_date[date] )
+VAR fin = MAXX ( jours, dim_date[date] )
+RETURN
+    IF (
+        ISBLANK ( debut ),
+        "Aucune commande pour ces filtres",
+        "Du " & FORMAT ( debut, "d mmm yyyy" ) & " au " & FORMAT ( fin, "d mmm yyyy" )
+            & "  ·  " & FORMAT ( [Commandes DZ], "#,0" ) & " commandes"
+    )
+
+Titre wilaya DZ =
+VAR choix = SELECTEDVALUE ( 'Indicateur wilaya'[Indicateur wilaya Order], 0 )
+RETURN
+    SWITCH ( choix, 0, "Taux d'échec", 1, "Commandes", 2, "CA livré", 3, "Ventes perdues", "Taux d'échec" )
+        & " par wilaya"
+
+// Chaîne de format dynamique (propriétés de la mesure > Format > Dynamique) :
+// SWITCH ( SELECTEDVALUE ( 'Indicateur wilaya'[Indicateur wilaya Order], 0 ),
+//     1, "#,0", 2, "#,0 ""DA""", 3, "#,0 ""DA""", "0.0%" )
+Valeur wilaya DZ =
+VAR choix = SELECTEDVALUE ( 'Indicateur wilaya'[Indicateur wilaya Order], 0 )
+RETURN
+    SWITCH ( choix, 1, [Commandes DZ], 2, [CA livré DZ], 3, [Ventes perdues DZ], [Taux d'échec DZ] )
 
 // ── France (données SYNTHÉTIQUES, démonstration) ────────────────────────────────
 Commandes FR = COUNTROWS ( fact_commandes_fr )
 
-Commandes expédiées FR = CALCULATE ( [Commandes FR], fact_commandes_fr[statut] <> "Annulée" )
+Commandes expédiées FR = CALCULATE ( [Commandes FR], KEEPFILTERS ( fact_commandes_fr[statut] <> "Annulée" ) )
 
 Taux de retour FR =
-DIVIDE ( CALCULATE ( [Commandes FR], fact_commandes_fr[statut] = "Retournée" ), [Commandes expédiées FR] )
+DIVIDE (
+    CALCULATE ( [Commandes FR], KEEPFILTERS ( fact_commandes_fr[statut] = "Retournée" ) ),
+    [Commandes expédiées FR]
+)
 
 Taux de non-retrait FR =
-DIVIDE ( CALCULATE ( [Commandes FR], fact_commandes_fr[statut] = "Non retirée" ),
-    CALCULATE ( [Commandes expédiées FR], fact_commandes_fr[mode_livraison] = "Point relais" ) )
+DIVIDE (
+    CALCULATE ( [Commandes FR],
+        KEEPFILTERS ( fact_commandes_fr[statut] = "Non retirée" ),
+        KEEPFILTERS ( fact_commandes_fr[mode_livraison] = "Point relais" ) ),
+    CALCULATE ( [Commandes expédiées FR], KEEPFILTERS ( fact_commandes_fr[mode_livraison] = "Point relais" ) )
+)
 
 Panier moyen FR = AVERAGE ( fact_commandes_fr[panier_eur] )
 
-CA gardé FR = CALCULATE ( SUM ( fact_commandes_fr[panier_eur] ), fact_commandes_fr[resultat] = "Gardée" )
+CA gardé FR = CALCULATE ( SUM ( fact_commandes_fr[panier_eur] ), KEEPFILTERS ( fact_commandes_fr[resultat] = "Gardée" ) )
 
-Taux de retour FR en soldes = CALCULATE ( [Taux de retour FR], dim_date[soldes_fr] = 1 )
+Taux de retour FR en soldes = CALCULATE ( [Taux de retour FR], KEEPFILTERS ( dim_date[soldes_fr] = 1 ) )
 
 // ── Brésil (Olist, CC BY-NC-SA 4.0) ─────────────────────────────────────────────
 Commandes BR = COUNTROWS ( fact_commandes_br )
@@ -80,9 +130,9 @@ Taux de retard BR = AVERAGE ( fact_commandes_br[en_retard] )
 
 Note moyenne BR = AVERAGE ( fact_commandes_br[note_avis] )
 
-Note moyenne en retard BR = CALCULATE ( [Note moyenne BR], fact_commandes_br[en_retard] = 1 )
+Note moyenne en retard BR = CALCULATE ( [Note moyenne BR], KEEPFILTERS ( fact_commandes_br[en_retard] = 1 ) )
 
-Note moyenne à l'heure BR = CALCULATE ( [Note moyenne BR], fact_commandes_br[en_retard] = 0 )
+Note moyenne à l'heure BR = CALCULATE ( [Note moyenne BR], KEEPFILTERS ( fact_commandes_br[en_retard] = 0 ) )
 
 Délai promis moyen BR = AVERAGE ( fact_commandes_br[delai_promis_j] )
 

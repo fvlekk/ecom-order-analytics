@@ -106,7 +106,8 @@ uv run python -m order_analytics.synthetic_fr         # -> data/raw/orders_fr_sy
 uv run python -m order_analytics.export_powerbi       # star schema -> data/powerbi/*.csv (Brazil skipped if not built)
 ```
 Then load `data/powerbi/*.csv` in Power BI, paste the measures from `powerbi/mesures.dax` and import
-`powerbi/theme-order-analytics.json`.
+`powerbi/theme-order-analytics-v2.json` (rounded cards, soft shadows, light page background; the original
+flat palette is kept as `theme-order-analytics.json`).
 
 ## Data and privacy
 
