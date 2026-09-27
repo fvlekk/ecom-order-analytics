@@ -13,7 +13,8 @@ with locale "English (United States)" so decimals are read correctly.
 import numpy as np
 import pandas as pd
 
-from order_analytics.config import OLIST_ORDERS, PROCESSED_DIR, RAW_ORDERS, ROOT
+from order_analytics.analysis_dz import likely_swaps
+from order_analytics.config import OLIST_ORDERS, PROCESSED_DIR, RAW_ORDERS, ROOT, SYNTHETIC_ORDERS, require
 from order_analytics.features import build as build_dz
 from order_analytics.markets import dz, fr
 from order_analytics.olist_late import build as build_br
@@ -54,7 +55,15 @@ def _save(df: pd.DataFrame, name: str) -> None:
 
 
 def fact_dz() -> pd.DataFrame:
-    df = build_dz(pd.read_parquet(RAW_ORDERS))
+    # Real Bizz orders stay on the owner's machine; everyone else gets the synthetic ones (same schema).
+    synthetic = not RAW_ORDERS.exists()
+    src = (
+        require(SYNTHETIC_ORDERS, "Run `uv run python -m order_analytics.synthetic` first.")
+        if synthetic
+        else RAW_ORDERS
+    )
+    print(f"fact_commandes_dz from {'synthetic' if synthetic else 'private'} orders")
+    df = build_dz(pd.read_parquet(src))
     local = dz.to_local(df["created_at"])
     df["commande_n"] = df.groupby("client_id").cumcount() + 1
     cost_known = df["items_cost"].where(df["items_cost"] > 0)
@@ -75,11 +84,13 @@ def fact_dz() -> pd.DataFrame:
         "heure": df["hour"],
         "commande_n_client": df["commande_n"],
         "taux_echec_route_60j": df["route_recent_fail_rate"].round(4),
+        "echange_probable": np.where(likely_swaps(df), "Oui", "Non"),
+        "synthetique": "Oui" if synthetic else "Non",
     })  # fmt: skip
 
 
 def fact_fr() -> pd.DataFrame:
-    df = pd.read_parquet(FR_SYNTHETIC)
+    df = pd.read_parquet(require(FR_SYNTHETIC, "Run `uv run python -m order_analytics.synthetic_fr` first."))
     local = fr.to_local(df["created_at"])
     return pd.DataFrame({
         "date_key": _date_key(local),
@@ -163,7 +174,11 @@ def dim_wilaya() -> pd.DataFrame:
 
 
 def main() -> None:
-    facts = {"fact_commandes_dz": fact_dz(), "fact_commandes_fr": fact_fr(), "fact_commandes_br": fact_br()}
+    facts = {"fact_commandes_dz": fact_dz(), "fact_commandes_fr": fact_fr()}
+    if OLIST_ORDERS.exists():
+        facts["fact_commandes_br"] = fact_br()
+    else:
+        print("fact_commandes_br skipped: run `uv run python -m order_analytics.sources.olist` first.")
     for name, df in facts.items():
         _save(df, name)
     _save(dim_date(pd.concat([f["date_key"] for f in facts.values()])), "dim_date")

@@ -78,10 +78,10 @@ def drift_report(ref: pd.DataFrame, cur: pd.DataFrame, features: list[str], labe
 
 
 def _olist() -> dict:
-    from order_analytics.config import OLIST_ORDERS
+    from order_analytics.config import OLIST_HINT, OLIST_ORDERS, require
     from order_analytics.olist_late import ADAPTIVE_NUMERIC, build
 
-    df = build(pd.read_parquet(OLIST_ORDERS))
+    df = build(pd.read_parquet(require(OLIST_ORDERS, OLIST_HINT)))
     df = df[df["label"].notna()]
     ref = df[(df["purchased_at"] >= "2018-01-01") & (df["purchased_at"] < "2018-05-01")]
     cur = df[(df["purchased_at"] >= "2018-06-01") & (df["purchased_at"] < "2018-09-01")]
@@ -92,10 +92,10 @@ def _olist() -> dict:
 
 
 def _bizz() -> dict:
-    from order_analytics.config import RAW_ORDERS
+    from order_analytics.config import PRIVATE_HINT, RAW_ORDERS, require
     from order_analytics.features import build
 
-    df = build(pd.read_parquet(RAW_ORDERS))
+    df = build(pd.read_parquet(require(RAW_ORDERS, PRIVATE_HINT)))
     df = df[df["label"] >= 0]
     cut = df["created_at"].max() - pd.Timedelta(days=60)
     ref, cur = df[df["created_at"] < cut], df[df["created_at"] >= cut]

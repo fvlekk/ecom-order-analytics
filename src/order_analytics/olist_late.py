@@ -21,7 +21,7 @@ from sklearn.metrics import average_precision_score, precision_recall_curve
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from order_analytics.config import OLIST_ORDERS, OLIST_REPORTS, PROCESSED_DIR, SEED
+from order_analytics.config import OLIST_HINT, OLIST_ORDERS, OLIST_REPORTS, PROCESSED_DIR, SEED, require
 from order_analytics.rolling import prior_window_sums
 from order_analytics.train import evaluate
 
@@ -164,7 +164,7 @@ def walk_forward(data: pd.DataFrame, month: str) -> tuple[pd.DataFrame, dict, di
 
 
 def main() -> None:
-    df = build(pd.read_parquet(OLIST_ORDERS))
+    df = build(pd.read_parquet(require(OLIST_ORDERS, OLIST_HINT)))
     data = df[df["label"].notna()].copy()
     for col in CATEGORICAL:
         data[col] = data[col].astype("category")

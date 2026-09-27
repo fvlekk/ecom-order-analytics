@@ -99,9 +99,12 @@ def build(orders: pd.DataFrame) -> pd.DataFrame:
 
 
 def main(source: str = "synthetic") -> None:
-    from order_analytics.config import RAW_ORDERS, SYNTHETIC_ORDERS
+    from order_analytics.config import PRIVATE_HINT, RAW_ORDERS, SYNTHETIC_ORDERS, require
 
-    path = SYNTHETIC_ORDERS if source == "synthetic" else RAW_ORDERS
+    if source == "synthetic":
+        path = require(SYNTHETIC_ORDERS, "Run `uv run python -m order_analytics.synthetic` first.")
+    else:
+        path = require(RAW_ORDERS, PRIVATE_HINT)
     df = build(pd.read_parquet(path))
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     df.to_parquet(FEATURES, index=False)

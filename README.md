@@ -76,17 +76,37 @@ tests/              46 tests (leakage, calendars, calibration, drift, analysis)
 
 ## Run it
 
+Needs [uv](https://docs.astral.sh/uv/) (it installs Python 3.12 and the libraries).
+
 ```bash
-uv sync
-uv run pytest
-uv run python -m order_analytics.sources.olist        # needs the Olist zip in data/raw/public/
-uv run python -m order_analytics.olist_late           # walk-forward evaluation (~20 s)
-uv run python -m order_analytics.monitoring olist     # drift report
-uv run python -m order_analytics.synthetic_fr         # French synthetic orders
-uv run python -m order_analytics.export_powerbi       # CSVs for Power BI
-uv run python -m order_analytics.features             # features on synthetic Bizz-shaped data (`real` = private data)
-uv run python -m order_analytics.analysis_dz          # Algerian analysis on those features (output stays local)
+uv sync                                               # install
+uv run pytest                                         # 47 tests
 ```
+
+**Algeria (synthetic data with the Bizz schema, no account needed)**
+```bash
+uv run python -m order_analytics.synthetic            # -> data/raw/orders_synthetic.parquet
+uv run python -m order_analytics.features             # -> data/processed/features.parquet
+uv run python -m order_analytics.train                # models vs the app's trust rule -> reports/metrics.json
+uv run python -m order_analytics.analysis_dz          # tests per question -> reports/dz/analysis.json
+```
+
+**Brazil (Olist, free Kaggle download)**: save the zip from
+[Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) as
+`data/raw/public/olist_brazilian_ecommerce.zip`, then:
+```bash
+uv run python -m order_analytics.sources.olist        # -> data/raw/olist_orders.parquet (checksum verified)
+uv run python -m order_analytics.olist_late           # walk-forward evaluation (~20 s) -> reports/olist/
+uv run python -m order_analytics.monitoring olist     # drift report -> reports/monitoring/olist.json
+```
+
+**France and Power BI**
+```bash
+uv run python -m order_analytics.synthetic_fr         # -> data/raw/orders_fr_synthetic.parquet
+uv run python -m order_analytics.export_powerbi       # star schema -> data/powerbi/*.csv (Brazil skipped if not built)
+```
+Then load `data/powerbi/*.csv` in Power BI, paste the measures from `powerbi/mesures.dax` and import
+`powerbi/theme-order-analytics.json`.
 
 ## Data and privacy
 
@@ -97,6 +117,11 @@ uv run python -m order_analytics.analysis_dz          # Algerian analysis on tho
   redistributed here; derived results are shared with attribution for non-commercial use.
 - **France**: synthetic. Calibrated on FEVAD's 2025 e-commerce report (average basket €62) and published
   clothing return rates (18–23 %); every unsourced parameter is marked `ASSUMPTION` in the code.
+
+## License
+
+Code: MIT (see `LICENSE`). Olist-derived results (`reports/olist/`, `reports/monitoring/olist.json`) keep the
+dataset's **CC BY-NC-SA 4.0** licence: attribution, non-commercial use only.
 
 ## Limitations
 

@@ -13,6 +13,13 @@ Livrées DZ = CALCULATE ( [Commandes DZ], fact_commandes_dz[resultat] = "Livrée
 // Échecs parmi les commandes terminées (les commandes en cours ne comptent pas).
 Taux d'échec DZ = DIVIDE ( [Échouées DZ], [Livrées DZ] + [Échouées DZ] )
 
+// Un retour suivi d'une nouvelle commande de la même cliente sous 14 jours est probablement un échange,
+// pas une vente perdue (colonne echange_probable, calculée après coup).
+Échecs réels DZ =
+CALCULATE ( [Échouées DZ], fact_commandes_dz[echange_probable] = "Non" )
+
+Taux d'échec réel DZ = DIVIDE ( [Échecs réels DZ], [Livrées DZ] + [Échouées DZ] )
+
 CA livré DZ =
 CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), fact_commandes_dz[resultat] = "Livrée" )
 

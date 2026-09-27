@@ -10,7 +10,7 @@ import zipfile
 import numpy as np
 import pandas as pd
 
-from order_analytics.config import OLIST_ORDERS, RAW_DIR
+from order_analytics.config import OLIST_ORDERS, RAW_DIR, require
 
 ZIP_PATH = RAW_DIR / "public" / "olist_brazilian_ecommerce.zip"
 SHA256 = "967e41e04fc306fe604e2a693f488995a8b41e5047418f8a5c8e4abd6deca784"
@@ -99,6 +99,11 @@ def build(z: zipfile.ZipFile) -> pd.DataFrame:
 
 
 def main() -> None:
+    require(
+        ZIP_PATH,
+        "Download the dataset zip from https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce "
+        "(free Kaggle account) and save it under exactly that name.",
+    )
     data = ZIP_PATH.read_bytes()
     if hashlib.sha256(data).hexdigest() != SHA256:
         raise ValueError(f"Checksum mismatch for {ZIP_PATH}: not the pinned Olist release")

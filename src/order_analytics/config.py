@@ -17,3 +17,13 @@ SUCCEEDED = {"LIVREE", "AVEC_ECHANGE"}
 IN_PROGRESS = {"EN_ATTENTE", "CONFIRMEE", "EN_LIVRAISON"}
 
 SEED = 42
+
+OLIST_HINT = "Run `uv run python -m order_analytics.sources.olist` first."
+PRIVATE_HINT = "This is private Bizz data (sources.bizz with a DATABASE_URL); it is not part of the public repo."
+
+
+def require(path: Path, how: str) -> Path:
+    """Stop with a clear instruction instead of a traceback when an input file is missing."""
+    if not path.exists():
+        raise SystemExit(f"Missing {path.relative_to(ROOT)}. {how}")
+    return path
