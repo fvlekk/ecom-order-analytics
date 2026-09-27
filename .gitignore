@@ -1,0 +1,16 @@
+.env
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Real (even anonymized) data never goes in git
+data/
+
+# Results on real Bizz data stay local; only public-data (Olist) results are shareable.
+reports/*
+!reports/olist/
+!reports/monitoring/
+reports/monitoring/*
+!reports/monitoring/olist.json

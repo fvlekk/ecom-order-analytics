@@ -1,0 +1,82 @@
+// Mesures DAX pour le modèle Power BI (tables issues de `python -m order_analytics.export_powerbi`).
+// Dans Power BI Desktop : Accueil > Nouvelle mesure, puis coller UNE mesure à la fois.
+// Prérequis : dim_date marquée comme table de dates (colonne `date`), relations date_key 1-* vers
+// chaque table de faits, et dim_wilaya[wilaya_code] 1-* fact_commandes_dz[wilaya_code].
+
+// ── Algérie (Bizz, données réelles anonymisées) ─────────────────────────────────
+Commandes DZ = COUNTROWS ( fact_commandes_dz )
+
+Livrées DZ = CALCULATE ( [Commandes DZ], fact_commandes_dz[resultat] = "Livrée" )
+
+Échouées DZ = CALCULATE ( [Commandes DZ], fact_commandes_dz[resultat] = "Échouée" )
+
+// Échecs parmi les commandes terminées (les commandes en cours ne comptent pas).
+Taux d'échec DZ = DIVIDE ( [Échouées DZ], [Livrées DZ] + [Échouées DZ] )
+
+CA livré DZ =
+CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), fact_commandes_dz[resultat] = "Livrée" )
+
+Ventes perdues DZ =
+CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ), fact_commandes_dz[resultat] = "Échouée" )
+
+Panier moyen DZ = DIVIDE ( [CA livré DZ], [Livrées DZ] )
+
+// Marge uniquement là où le prix d'achat est connu : ne jamais présenter une marge partielle comme totale.
+Marge connue DZ =
+SUMX (
+    FILTER ( fact_commandes_dz,
+        fact_commandes_dz[resultat] = "Livrée" && NOT ISBLANK ( fact_commandes_dz[cout_connu_da] ) ),
+    fact_commandes_dz[montant_articles_da] - fact_commandes_dz[cout_connu_da]
+)
+
+Couverture du coût DZ =
+DIVIDE (
+    CALCULATE ( SUM ( fact_commandes_dz[montant_articles_da] ),
+        fact_commandes_dz[resultat] = "Livrée", NOT ISBLANK ( fact_commandes_dz[cout_connu_da] ) ),
+    [CA livré DZ]
+)
+
+Part des commandes liées à un live =
+DIVIDE (
+    CALCULATE ( [Commandes DZ], fact_commandes_dz[depuis_live] = "Oui" ),
+    CALCULATE ( [Commandes DZ], fact_commandes_dz[source] = "Saisie Bizz" )
+)
+
+// Intelligence temporelle : nécessite dim_date marquée comme table de dates.
+Taux d'échec DZ (mois précédent) = CALCULATE ( [Taux d'échec DZ], DATEADD ( dim_date[date], -1, MONTH ) )
+
+Évolution du taux d'échec (points) = ( [Taux d'échec DZ] - [Taux d'échec DZ (mois précédent)] ) * 100
+
+// ── France (données SYNTHÉTIQUES, démonstration) ────────────────────────────────
+Commandes FR = COUNTROWS ( fact_commandes_fr )
+
+Commandes expédiées FR = CALCULATE ( [Commandes FR], fact_commandes_fr[statut] <> "Annulée" )
+
+Taux de retour FR =
+DIVIDE ( CALCULATE ( [Commandes FR], fact_commandes_fr[statut] = "Retournée" ), [Commandes expédiées FR] )
+
+Taux de non-retrait FR =
+DIVIDE ( CALCULATE ( [Commandes FR], fact_commandes_fr[statut] = "Non retirée" ),
+    CALCULATE ( [Commandes expédiées FR], fact_commandes_fr[mode_livraison] = "Point relais" ) )
+
+Panier moyen FR = AVERAGE ( fact_commandes_fr[panier_eur] )
+
+CA gardé FR = CALCULATE ( SUM ( fact_commandes_fr[panier_eur] ), fact_commandes_fr[resultat] = "Gardée" )
+
+Taux de retour FR en soldes = CALCULATE ( [Taux de retour FR], dim_date[soldes_fr] = 1 )
+
+// ── Brésil (Olist, CC BY-NC-SA 4.0) ─────────────────────────────────────────────
+Commandes BR = COUNTROWS ( fact_commandes_br )
+
+// en_retard vaut 1/0 pour les commandes livrées et reste vide sinon : AVERAGE ignore les vides.
+Taux de retard BR = AVERAGE ( fact_commandes_br[en_retard] )
+
+Note moyenne BR = AVERAGE ( fact_commandes_br[note_avis] )
+
+Note moyenne en retard BR = CALCULATE ( [Note moyenne BR], fact_commandes_br[en_retard] = 1 )
+
+Note moyenne à l'heure BR = CALCULATE ( [Note moyenne BR], fact_commandes_br[en_retard] = 0 )
+
+Délai promis moyen BR = AVERAGE ( fact_commandes_br[delai_promis_j] )
+
+Délai réel moyen BR = AVERAGE ( fact_commandes_br[delai_reel_j] )

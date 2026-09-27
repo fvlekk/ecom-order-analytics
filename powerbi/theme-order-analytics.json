@@ -1,0 +1,10 @@
+{
+  "name": "Order Analytics",
+  "dataColors": ["#6366f1", "#f43f5e", "#0891b2", "#d97706"],
+  "background": "#FFFFFF",
+  "foreground": "#1F2937",
+  "tableAccent": "#6366f1",
+  "good": "#0891b2",
+  "bad": "#f43f5e",
+  "neutral": "#9CA3AF"
+}

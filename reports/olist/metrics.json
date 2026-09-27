@@ -1,0 +1,238 @@
+{
+  "evaluation": "walk-forward: retrain on the 1st of each month on orders whose promised date has passed",
+  "test_months": [
+    "2018-06",
+    "2018-07",
+    "2018-08"
+  ],
+  "mean_over_months": {
+    "slack_rule": {
+      "roc_auc": 0.7243,
+      "pr_auc": 0.1032,
+      "recall_at_20pct": 0.497
+    },
+    "short_promise_rule": {
+      "roc_auc": 0.6481,
+      "pr_auc": 0.0876,
+      "recall_at_20pct": 0.3692
+    },
+    "logistic_regression[drift_aware]": {
+      "roc_auc": 0.6771,
+      "pr_auc": 0.0733,
+      "recall_at_20pct": 0.3957
+    },
+    "logistic_regression[static]": {
+      "roc_auc": 0.6703,
+      "pr_auc": 0.0723,
+      "recall_at_20pct": 0.3811
+    },
+    "gradient_boosting[static]": {
+      "roc_auc": 0.6201,
+      "pr_auc": 0.0702,
+      "recall_at_20pct": 0.3594
+    },
+    "logistic_regression[adaptive]": {
+      "roc_auc": 0.6724,
+      "pr_auc": 0.0643,
+      "recall_at_20pct": 0.3881
+    },
+    "gradient_boosting[drift_aware]": {
+      "roc_auc": 0.6254,
+      "pr_auc": 0.0556,
+      "recall_at_20pct": 0.3528
+    },
+    "gradient_boosting[adaptive]": {
+      "roc_auc": 0.6269,
+      "pr_auc": 0.0516,
+      "recall_at_20pct": 0.3376
+    },
+    "state_rule": {
+      "roc_auc": 0.5261,
+      "pr_auc": 0.0418,
+      "recall_at_20pct": 0.2925
+    },
+    "base_rate": {
+      "roc_auc": 0.5,
+      "pr_auc": 0.0358,
+      "recall_at_20pct": 0.1677
+    }
+  },
+  "per_month": {
+    "2018-06": {
+      "orders": 6096,
+      "late_rate": 0.0116,
+      "base_rate": {
+        "roc_auc": 0.5,
+        "pr_auc": 0.0116,
+        "recall_at_20pct": 0.1127
+      },
+      "state_rule": {
+        "roc_auc": 0.6739,
+        "pr_auc": 0.0246,
+        "recall_at_20pct": 0.493
+      },
+      "short_promise_rule": {
+        "roc_auc": 0.5777,
+        "pr_auc": 0.0195,
+        "recall_at_20pct": 0.2254
+      },
+      "slack_rule": {
+        "roc_auc": 0.7281,
+        "pr_auc": 0.0533,
+        "recall_at_20pct": 0.507
+      },
+      "logistic_regression[static]": {
+        "roc_auc": 0.7687,
+        "pr_auc": 0.0606,
+        "recall_at_20pct": 0.5493
+      },
+      "gradient_boosting[static]": {
+        "roc_auc": 0.7982,
+        "pr_auc": 0.0918,
+        "recall_at_20pct": 0.5915
+      },
+      "logistic_regression[drift_aware]": {
+        "roc_auc": 0.7474,
+        "pr_auc": 0.0401,
+        "recall_at_20pct": 0.5211
+      },
+      "gradient_boosting[drift_aware]": {
+        "roc_auc": 0.7585,
+        "pr_auc": 0.0463,
+        "recall_at_20pct": 0.5211
+      },
+      "logistic_regression[adaptive]": {
+        "roc_auc": 0.7581,
+        "pr_auc": 0.0411,
+        "recall_at_20pct": 0.5352
+      },
+      "gradient_boosting[adaptive]": {
+        "roc_auc": 0.7414,
+        "pr_auc": 0.0442,
+        "recall_at_20pct": 0.5211
+      }
+    },
+    "2018-07": {
+      "orders": 6156,
+      "late_rate": 0.0338,
+      "base_rate": {
+        "roc_auc": 0.5,
+        "pr_auc": 0.0338,
+        "recall_at_20pct": 0.0673
+      },
+      "state_rule": {
+        "roc_auc": 0.5151,
+        "pr_auc": 0.0444,
+        "recall_at_20pct": 0.2548
+      },
+      "short_promise_rule": {
+        "roc_auc": 0.5892,
+        "pr_auc": 0.0647,
+        "recall_at_20pct": 0.3173
+      },
+      "slack_rule": {
+        "roc_auc": 0.6644,
+        "pr_auc": 0.0793,
+        "recall_at_20pct": 0.4471
+      },
+      "logistic_regression[static]": {
+        "roc_auc": 0.6399,
+        "pr_auc": 0.073,
+        "recall_at_20pct": 0.3702
+      },
+      "gradient_boosting[static]": {
+        "roc_auc": 0.6171,
+        "pr_auc": 0.0595,
+        "recall_at_20pct": 0.3365
+      },
+      "logistic_regression[drift_aware]": {
+        "roc_auc": 0.651,
+        "pr_auc": 0.0898,
+        "recall_at_20pct": 0.4038
+      },
+      "gradient_boosting[drift_aware]": {
+        "roc_auc": 0.6193,
+        "pr_auc": 0.0603,
+        "recall_at_20pct": 0.3413
+      },
+      "logistic_regression[adaptive]": {
+        "roc_auc": 0.6048,
+        "pr_auc": 0.0572,
+        "recall_at_20pct": 0.3365
+      },
+      "gradient_boosting[adaptive]": {
+        "roc_auc": 0.6218,
+        "pr_auc": 0.0513,
+        "recall_at_20pct": 0.3365
+      }
+    },
+    "2018-08": {
+      "orders": 6351,
+      "late_rate": 0.0619,
+      "base_rate": {
+        "roc_auc": 0.5,
+        "pr_auc": 0.0619,
+        "recall_at_20pct": 0.3232
+      },
+      "state_rule": {
+        "roc_auc": 0.3893,
+        "pr_auc": 0.0563,
+        "recall_at_20pct": 0.1298
+      },
+      "short_promise_rule": {
+        "roc_auc": 0.7773,
+        "pr_auc": 0.1787,
+        "recall_at_20pct": 0.5649
+      },
+      "slack_rule": {
+        "roc_auc": 0.7804,
+        "pr_auc": 0.177,
+        "recall_at_20pct": 0.5369
+      },
+      "logistic_regression[static]": {
+        "roc_auc": 0.6022,
+        "pr_auc": 0.0834,
+        "recall_at_20pct": 0.2239
+      },
+      "gradient_boosting[static]": {
+        "roc_auc": 0.4451,
+        "pr_auc": 0.0593,
+        "recall_at_20pct": 0.1501
+      },
+      "logistic_regression[drift_aware]": {
+        "roc_auc": 0.6329,
+        "pr_auc": 0.0901,
+        "recall_at_20pct": 0.2621
+      },
+      "gradient_boosting[drift_aware]": {
+        "roc_auc": 0.4984,
+        "pr_auc": 0.0602,
+        "recall_at_20pct": 0.1959
+      },
+      "logistic_regression[adaptive]": {
+        "roc_auc": 0.6542,
+        "pr_auc": 0.0946,
+        "recall_at_20pct": 0.2926
+      },
+      "gradient_boosting[adaptive]": {
+        "roc_auc": 0.5176,
+        "pr_auc": 0.0594,
+        "recall_at_20pct": 0.1552
+      }
+    }
+  },
+  "best_model": "logistic_regression[drift_aware]",
+  "best_model_top_features_last_month": {
+    "promise_slack": 0.0262,
+    "promised_days": 0.0212,
+    "customer_state": 0.0073,
+    "route_recent_late_rate": 0.0056,
+    "orders_last_7d": 0.0052,
+    "seller_state": 0.0042,
+    "payment_type": 0.0023,
+    "n_sellers": 0.0011,
+    "seller_prior_late": 0.001,
+    "weight_g": 0.0008
+  },
+  "attribution": "Data: Olist Brazilian E-Commerce Public Dataset (CC BY-NC-SA 4.0)"
+}

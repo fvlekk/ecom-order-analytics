@@ -1,0 +1,92 @@
+{
+  "reference": {
+    "rows": 27425
+  },
+  "current": {
+    "rows": 18603
+  },
+  "outcome_shift": {
+    "reference_rate": 0.108,
+    "current_rate": 0.0361,
+    "z": -28.07,
+    "significant": true
+  },
+  "features": [
+    {
+      "feature": "route_recent_transit",
+      "psi": 1.553,
+      "level": "major"
+    },
+    {
+      "feature": "orders_last_7d",
+      "psi": 1.183,
+      "level": "major"
+    },
+    {
+      "feature": "route_recent_late_rate",
+      "psi": 0.804,
+      "level": "major"
+    },
+    {
+      "feature": "promised_days",
+      "psi": 0.373,
+      "level": "major"
+    },
+    {
+      "feature": "route_recent_n",
+      "psi": 0.201,
+      "level": "watch"
+    },
+    {
+      "feature": "promise_slack",
+      "psi": 0.187,
+      "level": "watch"
+    },
+    {
+      "feature": "freight_value",
+      "psi": 0.107,
+      "level": "watch"
+    },
+    {
+      "feature": "seller_prior_late_rate",
+      "psi": 0.052,
+      "level": "stable"
+    },
+    {
+      "feature": "weight_g",
+      "psi": 0.017,
+      "level": "stable"
+    },
+    {
+      "feature": "distance_km",
+      "psi": 0.013,
+      "level": "stable"
+    },
+    {
+      "feature": "customer_state",
+      "psi": 0.011,
+      "level": "stable"
+    },
+    {
+      "feature": "payment_installments",
+      "psi": 0.001,
+      "level": "stable"
+    },
+    {
+      "feature": "n_items",
+      "psi": 0.0,
+      "level": "stable"
+    }
+  ],
+  "major_drift": [
+    "route_recent_transit",
+    "orders_last_7d",
+    "route_recent_late_rate",
+    "promised_days"
+  ],
+  "verdict": "retrain on recent data, and fall back to the simple rule until the new model beats it",
+  "windows": {
+    "reference": "2018-01 to 2018-04",
+    "current": "2018-06 to 2018-08"
+  }
+}
